@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<title>currentSrc property</title>
+<link rel="help" href="https://html.spec.whatwg.org/#the-img-element">
+
+<script src="/resources/testharness.js"></script>
+<script src="/resources/testharnessreport.js"></script>
+
+<script>
+"use strict";
+
+async_test(t => {
+  const src = "data:image/gif;base64,R0lGODlhAQABAIAAAMLCwgAAACH5BAAAAAAALAAAAAABAAEAAAICRAEAOw==";
+  const image = new window.Image();
+  image.onload = image.onerror = t.step_func(event => {
+    assert_equals(event.type, "load");
+    assert_equals(image.currentSrc, src);
+    t.done();
+  });
+  image.src = src;
+  assert_equals(image.currentSrc, src);
+
+  // JSDOM specific: when image loading is not supported (i.e. when node-canvas is not installed), run the test anyway.
+  t.step_timeout(() => t.done(), 1000);
+}, "currentSrc for img with data URI");
+
+async_test(t => {
+  const image = new window.Image();
+  image.onload = image.onerror = t.step_func(event => {
+    assert_equals(event.type, "error");
+    assert_equals(image.currentSrc, "http://malformed:url");
+    t.done();
+  });
+  image.src = "http://malformed:url";
+  assert_equals(image.currentSrc, "");
+
+  // JSDOM specific: when image loading is not supported (i.e. when node-canvas is not installed), run the test anyway.
+  t.step_timeout(() => t.done(), 1000);
+}, "currentSrc for img with malformed URL");
+
+async_test(t => {
+  const image = new window.Image();
+  const src = "file-does-not-exist.png?nocache=" + Math.random();
+  const absoluteSrc = new URL(src, window.location).toString();
+  image.onload = image.onerror = t.step_func(event => {
+    assert_equals(event.type, "error");
+    assert_equals(image.currentSrc, absoluteSrc);
+    t.done();
+  });
+  image.src = src;
+  // TODO: What should image.currentSrc be? Chrome 77 says ""; Firefox 71 says absoluteSrc.
+  assert_in_array(image.currentSrc, [absoluteSrc, ""]);
+
+  // JSDOM specific: when image loading is not supported (i.e. when node-canvas is not installed), run the test anyway.
+  t.step_timeout(() => t.done(), 1000);
+}, "currentSrc for 404 img");
+
+async_test(t => {
+  const image = new window.Image();
+  const src = "image.gif?nocache=" + Math.random();
+  const absoluteSrc = new URL(src, window.location).toString();
+  image.onload = image.onerror = t.step_func(event => {
+    assert_equals(event.type, "load");
+    assert_equals(image.currentSrc, absoluteSrc);
+    t.done();
+  });
+  image.src = src;
+  // TODO: What should image.currentSrc be? Chrome 77 says ""; Firefox 71 says absoluteSrc.
+  assert_in_array(image.currentSrc, [absoluteSrc, ""]);
+
+  // JSDOM specific: when image loading is not supported (i.e. when node-canvas is not installed), run the test anyway.
+  t.step_timeout(() => t.done(), 1000);
+}, "currentSrc for successfully-loading img");
+</script>
